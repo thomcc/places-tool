@@ -1,0 +1,23 @@
+[package]
+name = "places-tool"
+version = "0.1.0"
+authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
+
+[dependencies]
+lazy_static = "1.1.0"
+clap = "2.32.0"
+log = "0.4.4"
+env_logger = "0.5.12"
+failure = "0.1.1"
+tempfile = "3.0.3"
+dirs = "1.0.3"
+rand = "0.5.5"
+
+[dependencies.mentat]
+git = "https://github.com/mozilla/mentat.git"
+tag = "0.11.1"
+
+[dependencies.rusqlite]
+version = "0.14.0"
+features = ["bundled", "limits", "functions"]
+
