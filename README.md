@@ -57,7 +57,7 @@ The first command produces `places_anonymized.sqlite` (again, using the largest 
 
 #### `anonymize` full documentation
 
-````
+```
 places-tool-anonymize
 Anonymize a places database
 
@@ -73,4 +73,4 @@ FLAGS:
 ARGS:
     <OUTPUT>    Path where we should output the anonymized db (defaults to places_anonymized.sqlite)
     <PLACES>    Path to places.sqlite. If not provided, we'll use the largest places.sqlite in your firefox profiles
-````
+```

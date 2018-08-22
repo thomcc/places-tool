@@ -1,7 +1,7 @@
 
 use failure;
-use std::fs;
-use std::io::{Write, self};
+use std::fs::{self, File};
+use std::io::{Read, Write, self};
 use std::fmt::{Write as FmtWrite};
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -237,8 +237,12 @@ pub struct PlacesToMentat {
     pub realistic: bool,
 }
 
-static SCHEMA: &'static str = include_str!("places-schema.edn");
-static INITIAL_DATA: &'static str = include_str!("initial-data.edn");
+fn read_file(path: &str) -> io::Result<String> {
+    let mut file = File::open(path)?;
+    let mut string = String::with_capacity((file.metadata()?.len() + 1) as usize);
+    file.read_to_string(&mut string)?;
+    Ok(string)
+}
 
 impl PlacesToMentat {
     pub fn run(self) -> Result<(), failure::Error> {
@@ -254,8 +258,12 @@ impl PlacesToMentat {
         let mut store = Store::open(self.mentat_db_path.to_str().unwrap())?;
 
         debug!("Transacting initial schema");
-        store.transact(SCHEMA)?;
-        store.transact(INITIAL_DATA)?;
+
+        let initial_schema = read_file("places-schema.edn")?;
+        let initial_data = read_file("initial-data.edn")?;
+
+        store.transact(&initial_schema)?;
+        store.transact(&initial_data)?;
         
         let max_buffer_size = if self.realistic { 0 } else { 1024 * 1024 * 1024 * 1024 };
         let mut builder = TransactBuilder::new_with_size(max_buffer_size);
