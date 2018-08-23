@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use tempfile;
 use rand::prelude::*;
+use util::humanize_size;
 
 use rusqlite::{
     Connection,
@@ -329,60 +330,67 @@ impl PlacesToMentat {
         };
 
         println!("Querying {} places ({} visits)", place_count, visit_count);
+        { // Scope borrow of stmt
+            let mut stmt = places.prepare("
+                SELECT
+                    p.id                as place_id,
+                    p.url               as place_url,
+                    p.description       as place_description,
+                    p.preview_image_url as place_preview_image_url,
+                    p.title             as place_title,
+                    p.origin_id         as place_origin_id,
+                    p.guid              as place_guid,
+                    v.visit_date        as visit_date,
+                    v.visit_type        as visit_type
+                FROM moz_places p
+                JOIN moz_historyvisits v
+                    ON p.id = v.place_id
+                ORDER BY p.id
+            ")?;
 
-        let mut stmt = places.prepare("
-            SELECT
-                p.id                as place_id,
-                p.url               as place_url,
-                p.description       as place_description,
-                p.preview_image_url as place_preview_image_url,
-                p.title             as place_title,
-                p.origin_id         as place_origin_id,
-                p.guid              as place_guid,
-                v.visit_date        as visit_date,
-                v.visit_type        as visit_type
-            FROM moz_places p
-            JOIN moz_historyvisits v
-                ON p.id = v.place_id
-            ORDER BY p.id
-        ")?;
+            let mut current_place = PlaceEntry { id: -1, .. PlaceEntry::default() };
 
-        let mut current_place = PlaceEntry { id: -1, .. PlaceEntry::default() };
+            let mut so_far = 0;
+            let mut rows = stmt.query(&[])?;
 
-        let mut so_far = 0;
-        let mut rows = stmt.query(&[])?;
+            while let Some(row_or_error) = rows.next() {
+                let row = row_or_error?;
+                let id: i64 = row.get("place_id");
+                if current_place.id == id {
+                    current_place.visits.push(VisitInfo {
+                        date: row.get("visit_date"),
+                        sync15_type: row.get("visit_type"),
+                    });
+                    continue;
+                }
 
-        while let Some(row_or_error) = rows.next() {
-            let row = row_or_error?;
-            let id: i64 = row.get("place_id");
-            if current_place.id == id {
-                current_place.visits.push(VisitInfo {
-                    date: row.get("visit_date"),
-                    sync15_type: row.get("visit_type"),
-                });
-                continue;
+                if current_place.id >= 0 {
+                    current_place.add(&mut builder, &mut store, &context_ids, &origin_ids)?;
+                    print!("\rProcessing {} / {} places (approx.)", so_far, place_count);
+                    io::stdout().flush()?;
+                    so_far += 1;
+                }
+                current_place = PlaceEntry::from_row(&row);
             }
 
             if current_place.id >= 0 {
                 current_place.add(&mut builder, &mut store, &context_ids, &origin_ids)?;
-                print!("\rProcessing {} / {} places (approx.)", so_far, place_count);
-                io::stdout().flush()?;
-                so_far += 1;
+                println!("\rProcessing {} / {} places (approx.)", so_far + 1, place_count);
             }
-            current_place = PlaceEntry::from_row(&row);
+            builder.transact(&mut store)?;
+
+            println!("Vacuuming mentat DB");
+
+            let mentat_sqlite_conn = store.dismantle().0;
+            mentat_sqlite_conn.execute("VACUUM", &[])?;
+            println!("Done!");
         }
+        drop(places);
+        let mentat_size = File::open(&self.mentat_db_path)?.metadata()?.len();
+        let places_size = File::open(&self.places_db_path)?.metadata()?.len();
+        println!("Initial places size: {}", humanize_size(places_size));
+        println!("Final mentat size: {}", humanize_size(mentat_size));
 
-        if current_place.id >= 0 {
-            current_place.add(&mut builder, &mut store, &context_ids, &origin_ids)?;
-            println!("\rProcessing {} / {} places (approx.)", so_far + 1, place_count);
-        }
-        builder.transact(&mut store)?;
-
-        println!("Vacuuming mentat DB");
-
-        let mentat_sqlite_conn = store.dismantle().0;
-        mentat_sqlite_conn.execute("VACUUM", &[])?;
-        println!("Done!");
         Ok(())
     }
 

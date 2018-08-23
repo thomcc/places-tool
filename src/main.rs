@@ -17,7 +17,7 @@ extern crate tempfile;
 use std::path::{Path, PathBuf};
 use std::fs;
 
-mod find_db;
+mod util;
 mod anonymize;
 mod to_mentat;
 
@@ -76,13 +76,13 @@ fn main() -> Result<(), failure::Error> {
 
     let places_db = if let Some(places) = subcmd_matches.value_of("PLACES") {
         let meta = fs::metadata(&places)?;
-        find_db::PlacesLocation {
+        util::PlacesLocation {
             profile_name: "".into(),
             path: fs::canonicalize(places)?,
             db_size: meta.len(),
         }
     } else {
-        let mut dbs = find_db::get_all_places_dbs()?;
+        let mut dbs = util::get_all_places_dbs()?;
         if dbs.len() == 0 {
             error!("No dbs found!");
             return Err(format_err!("No dbs found!"));

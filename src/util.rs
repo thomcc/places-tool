@@ -2,6 +2,21 @@ use failure;
 use dirs;
 use std::{process, fs, path::PathBuf};
 
+pub fn humanize_size(sz: u64) -> String {
+    let sizes = [
+        (1024 * 1024 * 1024, "Gb"),
+        (1024 * 1024, "Mb"),
+        (1024, "Kb"),
+    ];
+    for (lim, suffix) in &sizes {
+        if sz >= *lim {
+
+            return format!("~{} {}", ((sz as f64 / *lim as f64) * 10.0).round() / 10.0, suffix);
+        }
+    }
+    format!("{} bytes", sz)
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlacesLocation {
     pub profile_name: String,
@@ -11,18 +26,7 @@ pub struct PlacesLocation {
 
 impl PlacesLocation {
     pub fn friendly_db_size(&self) -> String {
-        let sizes = [
-            (1024 * 1024 * 1024, "Gb"),
-            (1024 * 1024, "Mb"),
-            (1024, "Kb"),
-        ];
-        for (lim, suffix) in &sizes {
-            if self.db_size >= *lim {
-
-                return format!("~{} {}", ((self.db_size as f64 / *lim as f64) * 10.0).round() / 10.0, suffix);
-            }
-        }
-        format!("{} bytes", self.db_size)
+        humanize_size(self.db_size)
     }
 }
 
