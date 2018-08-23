@@ -135,6 +135,9 @@ lazy_static! {
     static ref VISIT_DATE: Keyword = kw!(:visit/date);
 
     static ref VISIT_SOURCE_VISIT: Keyword = kw!(:visit/source_visit);
+    static ref VISIT_SYNC15_TYPE: Keyword = kw!(:visit/sync15_type);
+    static ref SYNC15_HISTORY_GUID: Keyword = kw!(:sync15.history/guid);
+    static ref SYNC15_HISTORY_PAGE: Keyword = kw!(:sync15.history/page);
 
     // static ref VISIT_SOURCE_REDIRECT: Keyword = kw!(:visit/source_redirect);
     // static ref VISIT_SOURCE_BOOKMARK: Keyword = kw!(:visit/source_bookmark);
@@ -157,6 +160,7 @@ lazy_static! {
 struct VisitInfo {
     // Everything else we fabricate (for reasons).
     date: i64,
+    sync15_type: i8,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -166,6 +170,7 @@ struct PlaceEntry {
     pub description: Option<String>,
     pub preview_image_url: Option<String>,
     pub title: String,
+    pub sync_guid: String,
     pub origin_id: i64,
     pub visits: Vec<VisitInfo>,
 }
@@ -196,6 +201,10 @@ impl PlaceEntry {
             builder.add_str(&page_meta_id, &*PAGE_META_PREVIEW_IMAGE_URL, &preview);
         }
 
+        let sync15_history_id = builder.next_tempid();
+        builder.add_str(&sync15_history_id, &*SYNC15_HISTORY_GUID, &self.sync_guid);
+        builder.add_ref_to_tmpid(&sync15_history_id, &*SYNC15_HISTORY_PAGE, &page_id);
+
         let mut rng = thread_rng();
         for visit in &self.visits {
             let visit_id = builder.next_tempid();
@@ -204,6 +213,7 @@ impl PlaceEntry {
             // unwrap is safe, only None for an empty slice.
             builder.add_long(&visit_id, &*VISIT_CONTEXT,  *rng.choose(context_ids).unwrap());
             builder.add_inst(&visit_id, &*VISIT_DATE, visit.date);
+            builder.add_long(&visit_id, &*VISIT_SYNC15_TYPE, visit.sync15_type as i64);
             // Point the visit at itself. This doesn't really matter, but
             // pointing at another visit would require us keep a huge hashmap in
             // memory, or to keep the places id on the visit as a unique
@@ -211,6 +221,7 @@ impl PlaceEntry {
             // size a lot in a way we wouldn't need to in reality.
             builder.add_ref_to_tmpid(&visit_id, &*VISIT_SOURCE_VISIT, &visit_id);
         }
+
         // not one tx per visit anymore (and doing per place instead) because
         // the bookkeeping/separation required is too annoying.
         builder.maybe_transact(store)?;
@@ -222,10 +233,14 @@ impl PlaceEntry {
             id: row.get("place_id"),
             url: row.get("place_url"),
             origin_id: row.get("place_origin_id"),
+            sync_guid: row.get("place_guid"),
             description: row.get("place_description"),
             preview_image_url: row.get("place_preview_image_url"),
             title: row.get::<_, Option<String>>("place_title").unwrap_or("".into()),
-            visits: vec![VisitInfo { date: row.get("visit_date") }],
+            visits: vec![VisitInfo {
+                date: row.get("visit_date"),
+                sync15_type: row.get("visit_type"),
+            }],
         }
     }
 }
@@ -323,7 +338,9 @@ impl PlacesToMentat {
                 p.preview_image_url as place_preview_image_url,
                 p.title             as place_title,
                 p.origin_id         as place_origin_id,
-                v.visit_date        as visit_date
+                p.guid              as place_guid,
+                v.visit_date        as visit_date,
+                v.visit_type        as visit_type
             FROM moz_places p
             JOIN moz_historyvisits v
                 ON p.id = v.place_id
@@ -339,7 +356,10 @@ impl PlacesToMentat {
             let row = row_or_error?;
             let id: i64 = row.get("place_id");
             if current_place.id == id {
-                current_place.visits.push(VisitInfo { date: row.get("visit_date") });
+                current_place.visits.push(VisitInfo {
+                    date: row.get("visit_date"),
+                    sync15_type: row.get("visit_type"),
+                });
                 continue;
             }
 

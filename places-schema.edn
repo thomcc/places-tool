@@ -10,16 +10,6 @@
     :db/cardinality :db.cardinality/one
     }
 
-  ; used for lookup refs so that we aren't force to insert everything in
-  ; one enormous transaction (making --realistic impossible)
-
-  ; { :db/ident :origin/places_id
-  ;   :db/valueType :db.type/long
-  ;   :db/cardinality :db.cardinality/one
-  ;   :db/unique :db.unique/identity
-  ;   :db/index true
-  ;   }
-
   ; Pages
 
   { :db/ident :page/url
@@ -124,6 +114,12 @@
   ;   :db/cardinality :db.cardinality/one
   ; }
 
+  ; The `visit type` field for sync15 (hmm...)
+  { :db/ident :visit/sync15_type 
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    }
+
   ; Device
 
   { :db/ident :device/name
@@ -149,6 +145,20 @@
     }
   ; ... etc. We're omitting color, the fact that some origins will open in a
   ; specific container by default, etc.
+  
+  { :db/ident :sync15.history/guid
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    ; :db/unique :db.unique/identity
+    ; :db/index true ; required for identity
+    }
 
+  { :db/ident :sync15.history/page
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    }
+
+  ; `:sync15.history/page_title` doesn't need to exist, we can use the title from
+  ; the most recent visit
 
 ]
