@@ -7,7 +7,7 @@ Tool to convert places databases to other things. Currently can convert to:
 
 ## Background
 
-This was pulled out of https://github.com/mozilla/application-services/pull/191 (where it had trouble due to requiring sqlcipher), and before that it was two separate tools, https://github.com/thomcc/mentat-places-test and https://github.com/thomcc/anonymize-places. 
+This was pulled out of https://github.com/mozilla/application-services/pull/191 (where it had trouble due to requiring sqlcipher), and before that it was two separate tools, https://github.com/thomcc/mentat-places-test and https://github.com/thomcc/anonymize-places.
 
 ## Usage
 

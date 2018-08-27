@@ -50,9 +50,9 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     }
-  
-  ; A "context" is a tuple of (device, container). 
-  
+
+  ; A "context" is a tuple of (device, container).
+
   ; This ID is just so that we can insert with a lookup ref.
   { :db/ident :context/id
     :db/valueType :db.type/long
@@ -91,7 +91,7 @@
   ; moment, we only sometimes have them. Unfortunately, even if we do have them,
   ; we fake it (and make `:visit/source_visit` point to the visit itself)
   ; because otherwise this would be really tricky to do in --realistic mode.
-  ; 
+  ;
   { :db/ident :visit/source_visit
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
@@ -127,7 +127,7 @@
     }
 
   ; Several other things...
-  
+
   ; (Open) enumeration of possible device types
   { :db/ident :device.type/desktop }
   { :db/ident :device.type/mobile }
@@ -139,7 +139,7 @@
     }
   ; ... etc. We're omitting color, the fact that some origins will open in a
   ; specific container by default, etc.
-  
+
   { :db/ident :sync15.history/guid
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one

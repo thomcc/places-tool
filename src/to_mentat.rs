@@ -276,7 +276,7 @@ impl PlacesToMentat {
 
         store.transact(&initial_schema)?;
         store.transact(&initial_data)?;
-        
+
         let max_buffer_size = if self.realistic { 0 } else { 1024 * 1024 * 1024 * 1024 };
         let mut builder = TransactBuilder::new_with_size(max_buffer_size);
 
