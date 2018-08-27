@@ -125,12 +125,11 @@ lazy_static! {
     static ref PAGE_URL: Keyword = kw!(:page/url);
     static ref PAGE_ORIGIN: Keyword = kw!(:page/origin);
 
-    static ref PAGE_META_TITLE: Keyword = kw!(:page_meta/title);
-    // static ref PAGE_META_FAVICON_URL: Keyword = kw!(:page_meta/favicon_url);
-    static ref PAGE_META_DESCRIPTION: Keyword = kw!(:page_meta/description);
-    static ref PAGE_META_PREVIEW_IMAGE_URL: Keyword = kw!(:page_meta/preview_image_url);
+    static ref PAGE_TITLE: Keyword = kw!(:page/title);
+    // static ref PAGE_FAVICON_URL: Keyword = kw!(:page/favicon_url);
+    static ref PAGE_DESCRIPTION: Keyword = kw!(:page/description);
+    static ref PAGE_PREVIEW_IMAGE_URL: Keyword = kw!(:page/preview_image_url);
 
-    static ref VISIT_PAGE_META: Keyword = kw!(:visit/page_meta);
     static ref VISIT_CONTEXT: Keyword = kw!(:visit/context);
     static ref VISIT_PAGE: Keyword = kw!(:visit/page);
     static ref VISIT_DATE: Keyword = kw!(:visit/date);
@@ -192,14 +191,12 @@ impl PlaceEntry {
             warn!("Unknown entid? {}", self.origin_id);
         }
 
-        let page_meta_id = builder.next_tempid();
-
-        builder.add_str(&page_meta_id, &*PAGE_META_TITLE, &self.title);
+        builder.add_str(&page_id, &*PAGE_TITLE, &self.title);
         if let Some(desc) = &self.description {
-            builder.add_str(&page_meta_id, &*PAGE_META_DESCRIPTION, &desc);
+            builder.add_str(&page_id, &*PAGE_DESCRIPTION, &desc);
         }
         if let Some(preview) = &self.preview_image_url {
-            builder.add_str(&page_meta_id, &*PAGE_META_PREVIEW_IMAGE_URL, &preview);
+            builder.add_str(&page_id, &*PAGE_PREVIEW_IMAGE_URL, &preview);
         }
 
         let sync15_history_id = builder.next_tempid();
@@ -210,7 +207,6 @@ impl PlaceEntry {
         for visit in &self.visits {
             let visit_id = builder.next_tempid();
             builder.add_ref_to_tmpid(&visit_id, &*VISIT_PAGE, &page_id);
-            builder.add_ref_to_tmpid(&visit_id, &*VISIT_PAGE_META, &page_meta_id);
             // unwrap is safe, only None for an empty slice.
             builder.add_long(&visit_id, &*VISIT_CONTEXT,  *rng.choose(context_ids).unwrap());
             builder.add_inst(&visit_id, &*VISIT_DATE, visit.date);

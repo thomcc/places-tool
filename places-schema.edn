@@ -27,7 +27,7 @@
 
   ; Page metadata (frequently stuff from the HEAD of the page)
 
-  { :db/ident :page_meta/title
+  { :db/ident :page/title
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     ; TODO this probably should have :db/index true :db/fulltext true
@@ -35,18 +35,18 @@
 
   ; This is stored in favicons.sqlite, which we don't read, so in practice
   ; it's always empty >_>.
-  { :db/ident :page_meta/favicon_url
+  { :db/ident :page/favicon_url
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     }
 
-  { :db/ident :page_meta/description
+  { :db/ident :page/description
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     ; TODO: should this have index or fulltext?
     }
 
-  { :db/ident :page_meta/preview_image_url
+  { :db/ident :page/preview_image_url
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     }
@@ -67,12 +67,6 @@
     }
 
   { :db/ident :context/container
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one
-    }
-
-  ; Visits
-  { :db/ident :visit/page_meta
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     }
